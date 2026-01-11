@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史记录 - 血压管理系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .theme-dropdown {
+            position: relative;
+        }
+
+        .theme-dropdown-btn {
+            padding: 6px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-dropdown-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .theme-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-width: 100px;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .theme-dropdown.active .theme-dropdown-menu {
+            display: block;
+        }
+
+        .theme-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--text);
+        }
+
+        .theme-option:hover {
+            background: var(--bg);
+        }
+
+        .theme-option.active {
+            color: var(--primary);
+        }
+
+        .theme-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+        }
+
+        .theme-dot-light {
+            background: #f5f5f5;
+        }
+
+        .theme-dot-dark {
+            background: #1a1a1a;
+        }
+
+        /* 移动端优化 */
+        .record-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .record-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .record-values {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .record-item {
+            text-align: center;
+        }
+
+        .record-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .record-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .record-notes {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 16px 12px;
+            }
+
+            .header {
+                padding: 12px 0;
+                margin-bottom: 16px;
+            }
+
+            .filters {
+                gap: 8px;
+            }
+
+            .filters .form-group {
+                min-width: 100%;
+            }
+
+            .filters .btn {
+                flex: 1;
+            }
+
+            .nav-actions {
+                gap: 6px;
+            }
+
+            .btn-sm {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container fade-in">
+        <header class="header">
+            <div class="logo">历史记录</div>
+            <div class="nav-actions">
+                <!-- 主题下拉菜单 -->
+                <div class="theme-dropdown" id="themeDropdown">
+                    <button class="theme-dropdown-btn btn-sm" onclick="toggleDropdown(event)">
+                        <span id="currentThemeIcon" class="theme-dot theme-dot-light"></span>
+                        <span>主题</span>
+                    </button>
+                    <div class="theme-dropdown-menu">
+                        <div class="theme-option" data-theme="light" onclick="setTheme('light')"><span
+                                class="theme-dot theme-dot-light"></span><span>浅色</span></div>
+                        <div class="theme-option" data-theme="dark" onclick="setTheme('dark')"><span
+                                class="theme-dot theme-dot-dark"></span><span>深色</span></div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="location.href='/static/pages/user.html'">返回</button>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="filters"
+                style="display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 20px;">
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 120px;">
+                    <label for="startDate">开始日期</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 120px;">
+                    <label for="endDate">结束日期</label>
+                    <input type="date" id="endDate">
+                </div>
+                <button type="button" class="btn btn-primary" style="height: 46px;" onclick="loadRecords()">查询</button>
+                <button type="button" class="btn btn-ghost" style="height: 46px;" onclick="clearFilters()">清除</button>
+            </div>
+
+            <div id="recordsList"></div>
+        </div>
+    </div>
+
+    <script>
+        // 自动退出逻辑
+        let idleTimer;
+        let globalIdleTimeout = 0;
+
+        function resetIdleTimer() {
+            if (globalIdleTimeout > 0) {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => {
+                    alert('由于长时间未操作，系统将自动退出');
+                    fetch('/api/logout', { method: 'POST' }).then(() => window.location.href = '/static/pages/login.html');
+                }, globalIdleTimeout * 60 * 1000);
+            }
+        }
+
+        async function initIdleTimer() {
+            try {
+                const res = await fetch('/api/settings/idle-timeout');
+                if (res.ok) {
+                    const data = await res.json();
+                    globalIdleTimeout = parseInt(data.idle_timeout) || 0;
+                    if (globalIdleTimeout > 0) {
+                        ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+                            document.addEventListener(event, resetIdleTimer);
+                        });
+                        resetIdleTimer();
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+        initIdleTimer();
+
+        // 主题切换
+        function toggleDropdown(e) { e.stopPropagation(); document.getElementById('themeDropdown').classList.toggle('active'); }
+        document.addEventListener('click', function () { document.getElementById('themeDropdown').classList.remove('active'); });
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-dark';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-light';
+            }
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.toggle('active', opt.dataset.theme === theme));
+            document.getElementById('themeDropdown').classList.remove('active');
+        }
+        setTheme(localStorage.getItem('theme') || 'light');
+
+        // 检查登录状态
+        fetch('/api/me')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.user_id) window.location.href = '/static/pages/login.html';
+            })
+            .catch(() => window.location.href = '/static/pages/login.html');
+
+        // 血压状态
+        function getBPStatus(systolic, diastolic) {
+            if (systolic < 120 && diastolic < 80) return { text: '正常', class: 'badge-success' };
+            if (systolic < 140 && diastolic < 90) return { text: '偏高', class: 'badge-warning' };
+            return { text: '高血压', class: 'badge-danger' };
+        }
+
+        // 加载记录
+        async function loadRecords() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            let url = '/api/bp';
+            const params = new URLSearchParams();
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (params.toString()) url += '?' + params.toString();
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const container = document.getElementById('recordsList');
+
+                if (!data.records || data.records.length === 0) {
+                    container.innerHTML = '<div class="empty">暂无记录</div>';
+                    return;
+                }
+
+                container.innerHTML = data.records.map(r => {
+                    const date = new Date(r.record_time);
+                    const dateStr = date.toLocaleString('zh-CN', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    const status = getBPStatus(r.systolic, r.diastolic);
+
+                    return `<div class="record-card">
+                        <div class="record-header">
+                            <span class="record-date">${dateStr}</span>
+                            <span class="badge ${status.class}">${status.text}</span>
+                        </div>
+                        <div class="record-values">
+                            <div class="record-item">
+                                <div class="record-value">${r.systolic}</div>
+                                <div class="record-label">收缩压</div>
+                            </div>
+                            <div class="record-item">
+                                <div class="record-value">${r.diastolic}</div>
+                                <div class="record-label">舒张压</div>
+                            </div>
+                            <div class="record-item">
+                                <div class="record-value">${r.heart_rate || '-'}</div>
+                                <div class="record-label">心率</div>
+                            </div>
+                        </div>
+                        ${r.notes ? `<div class="record-notes">备注: ${r.notes}</div>` : ''}
+                        <div style="margin-top: 12px; text-align: right;">
+                            <button class="btn btn-ghost btn-sm" onclick="deleteRecord(${r.id})">删除</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                console.error('加载失败', err);
+            }
+        }
+
+        // 删除记录
+        async function deleteRecord(id) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            try {
+                const res = await fetch(`/api/bp/${id}`, { method: 'DELETE' });
+                if (res.ok) loadRecords();
+            } catch (err) {
+                alert('删除失败');
+            }
+        }
+
+        // 清除筛选
+        function clearFilters() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            loadRecords();
+        }
+
+        loadRecords();
+    </script>
+</body>
+
+</html>

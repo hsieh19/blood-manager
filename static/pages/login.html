@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>血压管理系统 - 登录</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .theme-dropdown {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .theme-dropdown-btn {
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-dropdown-btn:hover {
+      border-color: var(--primary);
+    }
+
+    .theme-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      min-width: 120px;
+      overflow: hidden;
+    }
+
+    .theme-dropdown.active .theme-dropdown-menu {
+      display: block;
+    }
+
+    .theme-option {
+      padding: 10px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+      color: var(--text);
+    }
+
+    .theme-option:hover {
+      background: var(--bg);
+    }
+
+    .theme-option.active {
+      color: var(--primary);
+    }
+
+    .theme-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+    }
+
+    .theme-dot-light {
+      background: #f5f5f5;
+    }
+
+    .theme-dot-dark {
+      background: #1a1a1a;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 主题下拉菜单 -->
+  <div class="theme-dropdown" id="themeDropdown">
+    <button class="theme-dropdown-btn" onclick="toggleDropdown(event)">
+      <span id="currentThemeIcon" class="theme-dot theme-dot-light"></span>
+      <span>主题</span>
+      <span style="font-size: 0.7rem;">▼</span>
+    </button>
+    <div class="theme-dropdown-menu">
+      <div class="theme-option" data-theme="light" onclick="setTheme('light')">
+        <span class="theme-dot theme-dot-light"></span>
+        <span>浅色</span>
+      </div>
+      <div class="theme-option" data-theme="dark" onclick="setTheme('dark')">
+        <span class="theme-dot theme-dot-dark"></span>
+        <span>深色</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="card card-sm fade-in">
+      <h1>血压管理系统</h1>
+      <p class="subtitle">记录健康，守护家人</p>
+
+      <div id="message"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input type="text" id="username" name="username" placeholder="请输入用户名" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" name="password" placeholder="请输入密码" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">登录</button>
+      </form>
+
+    </div>
+  </div>
+
+  <script>
+    // 下拉菜单切换
+    function toggleDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('themeDropdown').classList.toggle('active');
+    }
+    document.addEventListener('click', function () {
+      document.getElementById('themeDropdown').classList.remove('active');
+    });
+
+    // 主题切换
+    function setTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-dark';
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-light';
+      }
+      localStorage.setItem('theme', theme);
+      document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.theme === theme);
+      });
+      document.getElementById('themeDropdown').classList.remove('active');
+    }
+
+    // 加载保存的主题
+    setTheme(localStorage.getItem('theme') || 'light');
+
+    const form = document.getElementById('loginForm');
+    const message = document.getElementById('message');
+
+    // 检查是否已登录
+    fetch('/api/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user_id) {
+          window.location.href = data.role === 'admin'
+            ? '/static/pages/admin.html'
+            : '/static/pages/user.html';
+        }
+      })
+      .catch(() => { });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          message.innerHTML = '<div class="message message-success">登录成功，正在跳转...</div>';
+          setTimeout(() => {
+            window.location.href = data.redirect;
+          }, 500);
+        } else {
+          message.innerHTML = `<div class="message message-error">${data.error}</div>`;
+        }
+      } catch (err) {
+        message.innerHTML = '<div class="message message-error">登录失败，请检查网络连接</div>';
+      }
+    });
+  </script>
+</body>
+
+</html>

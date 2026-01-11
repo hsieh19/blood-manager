@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>血压记录 - 血压管理系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .theme-dropdown {
+            position: relative;
+        }
+
+        .theme-dropdown-btn {
+            padding: 6px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .theme-dropdown-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .theme-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-width: 100px;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        .theme-dropdown.active .theme-dropdown-menu {
+            display: block;
+        }
+
+        .theme-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--text);
+        }
+
+        .theme-option:hover {
+            background: var(--bg);
+        }
+
+        .theme-option.active {
+            color: var(--primary);
+        }
+
+        .theme-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+        }
+
+        .theme-dot-light {
+            background: #f5f5f5;
+        }
+
+        .theme-dot-dark {
+            background: #1a1a1a;
+        }
+
+        /* 移动端优化 */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 16px 12px;
+            }
+
+            .header {
+                padding: 12px 0;
+                margin-bottom: 16px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .record-section {
+                grid-template-columns: 1fr 1fr !important;
+            }
+
+            .nav-actions {
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+
+            .btn-sm {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+            }
+
+            .user-info {
+                font-size: 0.8rem;
+            }
+
+            .logo {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container fade-in">
+        <header class="header">
+            <div class="logo">血压管理</div>
+            <div class="nav-actions">
+                <span class="user-info">欢迎，<span id="username"></span></span>
+                <!-- 主题下拉菜单 -->
+                <div class="theme-dropdown" id="themeDropdown">
+                    <button class="theme-dropdown-btn btn-sm" onclick="toggleDropdown(event)">
+                        <span id="currentThemeIcon" class="theme-dot theme-dot-light"></span>
+                        <span>主题</span>
+                    </button>
+                    <div class="theme-dropdown-menu">
+                        <div class="theme-option" data-theme="light" onclick="setTheme('light')"><span
+                                class="theme-dot theme-dot-light"></span><span>浅色</span></div>
+                        <div class="theme-option" data-theme="dark" onclick="setTheme('dark')"><span
+                                class="theme-dot theme-dot-dark"></span><span>深色</span></div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="adminBtn" style="display:none;"
+                    onclick="location.href='/static/pages/admin.html'">后台管理</button>
+                <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
+            </div>
+        </header>
+
+        <div id="message"></div>
+
+        <!-- 快速记录 -->
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">记录血压</h2>
+            <form id="recordForm">
+                <div class="record-section"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="systolic">收缩压 (mmHg)</label>
+                        <input type="number" id="systolic" min="60" max="260" placeholder="120" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="diastolic">舒张压 (mmHg)</label>
+                        <input type="number" id="diastolic" min="40" max="160" placeholder="80" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="heartRate">心率 (次/分)</label>
+                        <input type="number" id="heartRate" min="40" max="200" placeholder="70">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="notes">备注</label>
+                        <input type="text" id="notes" placeholder="可选">
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">保存记录</button>
+                    <button type="button" class="btn btn-ghost"
+                        onclick="location.href='/static/pages/records.html'">查询记录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 自动退出逻辑
+        let idleTimer;
+        let globalIdleTimeout = 0;
+
+        function resetIdleTimer() {
+            if (globalIdleTimeout > 0) {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => {
+                    alert('由于长时间未操作，系统将自动退出');
+                    logout();
+                }, globalIdleTimeout * 60 * 1000);
+            }
+        }
+
+        async function initIdleTimer() {
+            try {
+                const res = await fetch('/api/settings/idle-timeout');
+                if (res.ok) {
+                    const data = await res.json();
+                    globalIdleTimeout = parseInt(data.idle_timeout) || 0;
+                    if (globalIdleTimeout > 0) {
+                        ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+                            document.addEventListener(event, resetIdleTimer);
+                        });
+                        resetIdleTimer();
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+        initIdleTimer();
+
+        // 主题切换
+        function toggleDropdown(e) { e.stopPropagation(); document.getElementById('themeDropdown').classList.toggle('active'); }
+        document.addEventListener('click', function () { document.getElementById('themeDropdown').classList.remove('active'); });
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-dark';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-light';
+            }
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.toggle('active', opt.dataset.theme === theme));
+            document.getElementById('themeDropdown').classList.remove('active');
+        }
+        setTheme(localStorage.getItem('theme') || 'light');
+
+        // 检查登录状态
+        fetch('/api/me')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.user_id) window.location.href = '/static/pages/login.html';
+                document.getElementById('username').textContent = data.username;
+                if (data.role === 'admin') document.getElementById('adminBtn').style.display = 'inline-flex';
+            })
+            .catch(() => window.location.href = '/static/pages/login.html');
+
+        // 退出登录
+        function logout() {
+            fetch('/api/logout', { method: 'POST' }).then(() => window.location.href = '/static/pages/login.html');
+        }
+
+        // 显示消息
+        function showMessage(text, type = 'success') {
+            const msg = document.getElementById('message');
+            msg.innerHTML = `<div class="message message-${type}">${text}</div>`;
+            setTimeout(() => msg.innerHTML = '', 3000);
+        }
+
+        // 保存记录
+        document.getElementById('recordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                const res = await fetch('/api/bp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        systolic: parseInt(document.getElementById('systolic').value),
+                        diastolic: parseInt(document.getElementById('diastolic').value),
+                        heart_rate: parseInt(document.getElementById('heartRate').value) || 0,
+                        notes: document.getElementById('notes').value
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage(`记录成功 - ${data.time}`);
+                    document.getElementById('recordForm').reset();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('保存失败', 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

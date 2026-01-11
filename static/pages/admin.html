@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 血压管理系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .theme-dropdown {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .theme-dropdown-btn {
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-dropdown-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .theme-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 4px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-width: 120px;
+            overflow: hidden;
+        }
+
+        .theme-dropdown.active .theme-dropdown-menu {
+            display: block;
+        }
+
+        .theme-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            color: var(--text);
+        }
+
+        .theme-option:hover {
+            background: var(--bg);
+        }
+
+        .theme-option.active {
+            color: var(--primary);
+        }
+
+        .theme-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+        }
+
+        .theme-dot-light {
+            background: #f5f5f5;
+        }
+
+        .theme-dot-dark {
+            background: #1a1a1a;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                padding: 15px;
+            }
+
+            .nav-actions {
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .user-info {
+                width: 100%;
+                margin-bottom: 5px;
+                font-size: 0.9rem;
+            }
+
+            /* 标签页横向滚动 */
+            .tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .tab {
+                flex: 0 0 auto;
+                padding: 10px 15px;
+            }
+
+            /* 表格转换为卡片 */
+            .table-container table,
+            .table-container thead,
+            .table-container tbody,
+            .table-container th,
+            .table-container td,
+            .table-container tr {
+                display: block;
+            }
+
+            .table-container thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+
+            .table-container tr {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                margin-bottom: 15px;
+                padding: 12px;
+                background: var(--surface);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .table-container td {
+                border: none;
+                padding: 8px 0;
+                position: relative;
+                padding-left: 40%;
+                text-align: right;
+                min-height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            .table-container td:not(:last-child) {
+                border-bottom: 1px dashed var(--border);
+            }
+
+            .table-container td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0;
+                width: 35%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: 600;
+                color: var(--text-muted);
+                font-size: 0.85rem;
+            }
+
+            /* 修正 Badge 在卡片中的显示 */
+            .badge {
+                display: inline-block;
+                width: auto;
+                padding: 4px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 主题下拉菜单 -->
+    <div class="theme-dropdown" id="themeDropdown">
+        <button class="theme-dropdown-btn" onclick="toggleDropdown(event)">
+            <span id="currentThemeIcon" class="theme-dot theme-dot-light"></span>
+            <span>主题</span>
+            <span style="font-size: 0.7rem;">▼</span>
+        </button>
+        <div class="theme-dropdown-menu">
+            <div class="theme-option" data-theme="light" onclick="setTheme('light')"><span
+                    class="theme-dot theme-dot-light"></span><span>浅色</span></div>
+            <div class="theme-option" data-theme="dark" onclick="setTheme('dark')"><span
+                    class="theme-dot theme-dot-dark"></span><span>深色</span></div>
+        </div>
+    </div>
+
+    <div class="container fade-in">
+        <header class="header">
+            <div class="logo">管理后台</div>
+            <div class="nav-actions">
+                <span class="user-info">管理员：<span id="adminName"></span></span>
+                <button class="btn btn-ghost btn-sm" onclick="location.href='/static/pages/user.html'">用户界面</button>
+                <button class="btn btn-ghost btn-sm" onclick="logout()">退出</button>
+            </div>
+        </header>
+
+        <div id="message"></div>
+
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('users')">账号管理</button>
+            <button class="tab" onclick="switchTab('database')">数据库配置</button>
+            <button class="tab" onclick="switchTab('security')">安全设置</button>
+        </div>
+
+        <!-- 用户管理 -->
+        <div id="users-tab" class="tab-content active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0;">用户列表</h2>
+                    <button class="btn btn-primary btn-sm" onclick="showAddUserModal()">添加用户</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>角色</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody">
+                            <tr>
+                                <td colspan="5" class="empty">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据库配置 -->
+        <div id="database-tab" class="tab-content">
+            <div class="card">
+                <h2>数据库配置</h2>
+                <p class="subtitle">配置外部MySQL数据库连接，切换后需要重新创建用户账号。</p>
+
+                <form id="dbForm">
+                    <div class="form-group">
+                        <label for="dbType">数据库类型</label>
+                        <select id="dbType" onchange="toggleMySQLFields()">
+                            <option value="sqlite">SQLite (本地)</option>
+                            <option value="mysql">MySQL</option>
+                        </select>
+                    </div>
+
+                    <div id="mysqlFields" style="display: none;">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="dbHost">主机地址</label>
+                                <input type="text" id="dbHost" placeholder="localhost">
+                            </div>
+                            <div class="form-group">
+                                <label for="dbPort">端口</label>
+                                <input type="text" id="dbPort" placeholder="3306">
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="dbUser">用户名</label>
+                                <input type="text" id="dbUser" placeholder="root">
+                            </div>
+                            <div class="form-group">
+                                <label for="dbPassword">密码</label>
+                                <input type="password" id="dbPassword" placeholder="数据库密码">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dbName">数据库名</label>
+                            <input type="text" id="dbName" placeholder="blood_manager">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button type="button" class="btn btn-ghost" onclick="testConnection()">测试连接</button>
+                        <button type="submit" class="btn btn-primary">保存并切换</button>
+                    </div>
+                </form>
+
+                <div class="divider"></div>
+
+                <!-- 备份还原 -->
+                <h2>数据备份与还原</h2>
+                <p class="subtitle">仅支持本地SQLite数据库。MySQL请使用专用工具。</p>
+
+                <div class="grid-2" style="margin-top: 16px; align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="backupPath">备份目录（自动生成文件名）</label>
+                        <input type="text" id="backupPath" placeholder="如: D:\backup">
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" onclick="backupDatabase()">导出备份</button>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top: 16px; align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="restorePath">还原文件路径</label>
+                        <input type="text" id="restorePath" placeholder="如: D:\backup\blood_backup_20260111_104646.db">
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-danger" onclick="restoreDatabase()">还原数据</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 安全设置 -->
+        <div id="security-tab" class="tab-content">
+            <div class="card">
+                <h2>安全设置</h2>
+                <p class="subtitle">设置用户无操作自动退出时间（所有用户生效）</p>
+
+                <div class="grid-2" style="margin-top: 16px; align-items: end; max-width: 500px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="idleTimeout">自动退出时间（分钟）</label>
+                        <input type="number" id="idleTimeout" min="0" max="120" placeholder="0=不自动退出">
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" onclick="saveIdleTimeout()">保存设置</button>
+                    </div>
+                </div>
+                <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">设置为0表示不自动退出。建议值：5-30分钟。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加用户弹窗 -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">添加用户</h3>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label for="newUsername">用户名</label>
+                    <input type="text" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">初始密码</label>
+                    <input type="password" id="newPassword" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 修改密码弹窗 -->
+    <div id="changePwdModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">修改密码</h3>
+            <form id="changePwdForm">
+                <input type="hidden" id="changePwdUserId">
+                <div class="form-group">
+                    <label for="newPwdValue">新密码</label>
+                    <input type="password" id="newPwdValue" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-ghost" onclick="closePwdModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">确认修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 下拉菜单切换
+        function toggleDropdown(e) { e.stopPropagation(); document.getElementById('themeDropdown').classList.toggle('active'); }
+        document.addEventListener('click', function () { document.getElementById('themeDropdown').classList.remove('active'); });
+
+        // 主题切换
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-dark';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.getElementById('currentThemeIcon').className = 'theme-dot theme-dot-light';
+            }
+            localStorage.setItem('theme', theme);
+            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.toggle('active', opt.dataset.theme === theme));
+            document.getElementById('themeDropdown').classList.remove('active');
+        }
+        setTheme(localStorage.getItem('theme') || 'light');
+
+        // 自动退出逻辑
+        let idleTimer;
+        let globalIdleTimeout = 0;
+
+        function resetIdleTimer() {
+            if (globalIdleTimeout > 0) {
+                clearTimeout(idleTimer);
+                idleTimer = setTimeout(() => {
+                    alert('由于长时间未操作，系统将自动退出');
+                    logout();
+                }, globalIdleTimeout * 60 * 1000);
+            }
+        }
+
+        async function initIdleTimer() {
+            try {
+                const res = await fetch('/api/settings/idle-timeout');
+                if (res.ok) {
+                    const data = await res.json();
+                    globalIdleTimeout = parseInt(data.idle_timeout) || 0;
+
+                    // 如果存在设置输入框，填充值
+                    const input = document.getElementById('idleTimeout');
+                    if (input) input.value = globalIdleTimeout;
+
+                    if (globalIdleTimeout > 0) {
+                        ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+                            document.addEventListener(event, resetIdleTimer);
+                        });
+                        resetIdleTimer();
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+        initIdleTimer();
+
+        // 检查管理员权限
+        fetch('/api/me')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.user_id || data.role !== 'admin') {
+                    window.location.href = '/static/pages/login.html';
+                }
+                document.getElementById('adminName').textContent = data.username;
+            })
+            .catch(() => window.location.href = '/static/pages/login.html');
+
+        // 退出
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => window.location.href = '/static/pages/login.html');
+        }
+
+        // 标签切换
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+
+        // 消息提示
+        function showMessage(text, type = 'success') {
+            const msg = document.getElementById('message');
+            msg.innerHTML = `<div class="message message-${type}">${text}</div>`;
+            setTimeout(() => msg.innerHTML = '', 3000);
+        }
+
+        // ========== 用户管理 ==========
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const data = await res.json();
+                const tbody = document.getElementById('usersBody');
+
+                if (!data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无用户</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.users.map(u => {
+                    const date = new Date(u.created_at).toLocaleDateString('zh-CN');
+                    const roleText = u.role === 'admin' ? '管理员' : '普通用户';
+                    const roleBadge = u.role === 'admin' ? 'badge-info' : 'badge-success';
+
+                    return `<tr>
+            <td data-label="ID">${u.id}</td>
+            <td data-label="用户名">${u.username}</td>
+            <td data-label="角色"><span class="badge ${roleBadge}">${roleText}</span></td>
+            <td data-label="创建时间">${date}</td>
+            <td data-label="操作">
+              <button class="btn btn-ghost btn-sm" onclick="showChangePwdModal(${u.id})">改密</button>
+              ${u.role !== 'admin' ? `<button class="btn btn-ghost btn-sm" onclick="deleteUser(${u.id})">删除</button>` : ''}
+            </td>
+          </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('加载用户失败', err);
+            }
+        }
+
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('addUserModal').classList.remove('active');
+            document.getElementById('addUserForm').reset();
+        }
+
+        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('newUsername').value,
+                        password: document.getElementById('newPassword').value
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage('用户创建成功');
+                    closeModal();
+                    loadUsers();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('创建失败', 'error');
+            }
+        });
+
+        async function deleteUser(id) {
+            if (!confirm('确定要删除该用户及其所有血压记录吗？')) return;
+
+            try {
+                const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage('用户已删除');
+                    loadUsers();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('删除失败', 'error');
+            }
+        }
+
+        function showChangePwdModal(id) {
+            document.getElementById('changePwdUserId').value = id;
+            document.getElementById('changePwdModal').classList.add('active');
+        }
+
+        function closePwdModal() {
+            document.getElementById('changePwdModal').classList.remove('active');
+            document.getElementById('changePwdForm').reset();
+        }
+
+        document.getElementById('changePwdForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('changePwdUserId').value;
+            const newPwd = document.getElementById('newPwdValue').value;
+
+            try {
+                const res = await fetch(`/api/admin/users/${userId}/password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPwd })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage('密码修改成功');
+                    closePwdModal();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('修改失败', 'error');
+            }
+        });
+
+        // ========== 数据库配置 ==========
+        function toggleMySQLFields() {
+            const type = document.getElementById('dbType').value;
+            document.getElementById('mysqlFields').style.display = type === 'mysql' ? 'block' : 'none';
+        }
+
+        async function loadDBConfig() {
+            try {
+                const res = await fetch('/api/admin/db-config');
+                const data = await res.json();
+                document.getElementById('dbType').value = data.type || 'sqlite';
+                document.getElementById('dbHost').value = data.host || '';
+                document.getElementById('dbPort').value = data.port || '3306';
+                document.getElementById('dbUser').value = data.user || '';
+                document.getElementById('dbName').value = data.dbname || '';
+                toggleMySQLFields();
+            } catch (err) {
+                console.error('加载配置失败', err);
+            }
+        }
+
+        function getDBConfigData() {
+            return {
+                type: document.getElementById('dbType').value,
+                host: document.getElementById('dbHost').value,
+                port: document.getElementById('dbPort').value,
+                user: document.getElementById('dbUser').value,
+                password: document.getElementById('dbPassword').value,
+                dbname: document.getElementById('dbName').value
+            };
+        }
+
+        async function testConnection() {
+            try {
+                const res = await fetch('/api/admin/db-config/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getDBConfigData())
+                });
+
+                const data = await res.json();
+                showMessage(data.message || data.error, res.ok ? 'success' : 'error');
+            } catch (err) {
+                showMessage('测试失败', 'error');
+            }
+        }
+
+        document.getElementById('dbForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!confirm('切换数据库后需要重新创建用户，确定继续吗？')) return;
+
+            try {
+                const res = await fetch('/api/admin/db-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getDBConfigData())
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage('数据库切换成功，请重新登录');
+                    setTimeout(() => window.location.href = '/static/pages/login.html', 2000);
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('保存失败', 'error');
+            }
+        });
+
+        // ========== 备份还原 ==========
+        function generateBackupFileName() {
+            const now = new Date();
+            const pad = (n) => n.toString().padStart(2, '0');
+            const timestamp = now.getFullYear().toString() +
+                pad(now.getMonth() + 1) +
+                pad(now.getDate()) + '_' +
+                pad(now.getHours()) +
+                pad(now.getMinutes()) +
+                pad(now.getSeconds());
+            return 'blood_backup_' + timestamp + '.db';
+        }
+
+        async function backupDatabase() {
+            let dir = document.getElementById('backupPath').value.trim();
+            if (!dir) {
+                showMessage('请输入备份目录路径', 'error');
+                return;
+            }
+
+            // 确保目录路径以斜杠结尾
+            if (!dir.endsWith('\\') && !dir.endsWith('/')) {
+                dir += '\\';
+            }
+
+            // 自动生成带时间戳的文件名
+            const fileName = generateBackupFileName();
+            const fullPath = dir + fileName;
+
+            try {
+                const res = await fetch('/api/admin/db/backup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: fullPath })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage('备份成功: ' + fileName, 'success');
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('备份失败', 'error');
+            }
+        }
+
+        async function restoreDatabase() {
+            const path = document.getElementById('restorePath').value.trim();
+            if (!path) {
+                showMessage('请输入还原文件路径', 'error');
+                return;
+            }
+
+            if (!confirm('还原将覆盖当前数据！确定继续吗？')) return;
+
+            try {
+                const res = await fetch('/api/admin/db/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    showMessage('还原成功，请重新登录');
+                    setTimeout(() => window.location.href = '/static/pages/login.html', 2000);
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (err) {
+                showMessage('还原失败', 'error');
+            }
+        }
+
+        // ========== 自动退出设置 ==========
+        async function saveIdleTimeout() {
+            const timeout = parseInt(document.getElementById('idleTimeout').value) || 0;
+            try {
+                const res = await fetch('/api/admin/settings/idle-timeout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ timeout })
+                });
+
+                if (res.ok) {
+                    globalIdleTimeout = timeout;
+                    showMessage(`自动退出时间已设置为 ${timeout > 0 ? timeout + ' 分钟' : '不自动退出'}`);
+                    if (timeout > 0) {
+                        // 重新绑定事件（防止重复绑定，实际项目中应更严谨，此处简单处理）
+                        ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+                            document.removeEventListener(event, resetIdleTimer);
+                            document.addEventListener(event, resetIdleTimer);
+                        });
+                        resetIdleTimer();
+                    } else {
+                        clearTimeout(idleTimer);
+                    }
+                } else {
+                    showMessage('保存失败', 'error');
+                }
+            } catch (e) {
+                showMessage('保存失败', 'error');
+            }
+        }
+
+        // 页面加载
+        loadUsers();
+        loadDBConfig();
+    </script>
+</body>
+
+</html>
