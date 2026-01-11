@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"blood-manager/database"
-	"blood-manager/models"
+	"blood-manager/internal/database"
+	"blood-manager/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

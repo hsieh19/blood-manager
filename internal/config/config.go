@@ -19,7 +19,7 @@ type DBConfig struct {
 var (
 	currentConfig *DBConfig
 	configMutex   sync.RWMutex
-	configFile    = "db_config.json"
+	configFile    = "data/db_config.json"
 )
 
 // GetConfig 获取当前数据库配置

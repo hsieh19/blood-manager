@@ -22,7 +22,7 @@ COPY . .
 
 # 编译为静态二进制文件
 # CGO_ENABLED=1 是因为使用了 SQLite (go-sqlite3 等驱动通常需要 CGO)
-RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflags "-static"' -o blood-manager main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflags "-static"' -o blood-manager cmd/blood-manager/main.go
 
 # =============
 # 第二阶段：运行
@@ -40,11 +40,11 @@ WORKDIR /app
 # 从构建阶段复制二进制文件到 /app
 COPY --from=builder /build/blood-manager .
 
-# 复制静态资源文件夹到 /app/static
-COPY --from=builder /build/static ./static
+# 复制静态资源文件夹到 /app/web/static
+COPY --from=builder /build/web/static ./web/static
 
-# 创建数据存储目录，确保程序有权读写
-RUN mkdir -p /app/data /app/config
+# 创建数据存储目录
+RUN mkdir -p /app/data
 
 # 给予二进制文件执行权限
 RUN chmod +x /app/blood-manager

@@ -56,14 +56,12 @@ docker run -d \
   --name blood-manager \
   -p 8080:8080 \
   -v ./data:/app/data \
-  -v ./config:/app/config \
   --restart always \
   hsieh19/blood-manager:latest
 ```
 
 ### 目录说明
-- `/app/data`: 存放 SQLite 数据库文件。
-- `/app/config`: 存放系统配置文件。
+- `/app/data`: 存放 SQLite 数据库文件及系统配置文件。
 
 ## 📦 版本发布
 

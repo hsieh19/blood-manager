@@ -1,5 +1,6 @@
-# 编译二进制文件
+# 二进制文件
 /dist/
+/bin/
 *.exe
 *.exe~
 *.dll
@@ -7,15 +8,17 @@
 *.dylib
 
 # 数据库和日志
-*.db
-*.log
-app.log
+# 生产环境建议通过卷挂载 /app/data，不应提交本地测试数据
+/data/
+/app.log
 
 # 隐藏文件 (IDE/OS)
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
 
 # 编译缓存
 /tmp/

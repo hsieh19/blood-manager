@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"blood-manager/config"
-	"blood-manager/database"
-	"blood-manager/models"
+	"blood-manager/internal/config"
+	"blood-manager/internal/database"
+	"blood-manager/internal/models"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"

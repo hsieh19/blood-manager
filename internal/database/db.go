@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"blood-manager/config"
+	"blood-manager/internal/config"
 
 	_ "github.com/go-sql-driver/mysql"
 	bolt "go.etcd.io/bbolt"
@@ -66,7 +66,7 @@ func InitDB() error {
 // connectBolt 连接Bolt数据库
 func connectBolt() error {
 	var err error
-	boltDB, err = bolt.Open("blood_manager.db", 0600, nil)
+	boltDB, err = bolt.Open("data/blood_manager.db", 0600, nil)
 	if err != nil {
 		return err
 	}
@@ -587,7 +587,7 @@ func RestoreDB(srcPath string) error {
 		boltDB = nil
 	}
 
-	dbPath := "blood_manager.db"
+	dbPath := "data/blood_manager.db"
 
 	srcFile, err := os.Open(srcPath)
 	if err != nil {

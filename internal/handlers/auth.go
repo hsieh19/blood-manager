@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"blood-manager/database"
-	"blood-manager/models"
+	"blood-manager/internal/database"
+	"blood-manager/internal/models"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

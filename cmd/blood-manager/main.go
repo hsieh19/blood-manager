@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"blood-manager/database"
-	"blood-manager/handlers"
-	"blood-manager/middleware"
+	"blood-manager/internal/database"
+	"blood-manager/internal/handlers"
+	"blood-manager/internal/middleware"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -32,7 +32,7 @@ func main() {
 	r.Use(sessions.Sessions("session", store))
 
 	// 静态文件服务
-	r.Static("/static", "./static")
+	r.Static("/static", "./web/static")
 
 	// 根路径重定向到登录页
 	r.GET("/", func(c *gin.Context) {
