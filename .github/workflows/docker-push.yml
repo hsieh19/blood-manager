@@ -57,4 +57,4 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.IMAGE_NAME }}
           short-description: "极简家庭血压管理系统，支持多用户、备份还原及 Docker 一键部署。"
-          readme-filepath: ./README.md
+          readme-filepath: ./DOCKERHUB.md
