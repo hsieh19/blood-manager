@@ -47,6 +47,24 @@
 
 4. 访问：`http://localhost:8080` (默认管理员账号: admin / admin)
 
+## 🐳 Docker 部署
+
+你可以直接使用 Docker 快速部署本项目：
+
+```bash
+docker run -d \
+  --name blood-manager \
+  -p 8080:8080 \
+  -v ./data:/app/data \
+  -v ./config:/app/config \
+  --restart always \
+  hsieh19/blood-manager:latest
+```
+
+### 目录说明
+- `/app/data`: 存放 SQLite 数据库文件。
+- `/app/config`: 存放系统配置文件。
+
 ## 📦 版本发布
 
 我们提供预编译的二进制文件，支持以下架构：

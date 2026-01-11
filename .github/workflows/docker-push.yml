@@ -49,3 +49,12 @@ jobs:
           # 开启缓存优化构建速度
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.IMAGE_NAME }}
+          short-description: "极简家庭血压管理系统，支持多用户、备份还原及 Docker 一键部署。"
+          readme-filepath: ./README.md
