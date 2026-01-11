@@ -26,6 +26,11 @@ docker run -d \
 ### 挂载目录说明
 - `/app/data`: 存放 SQLite 数据库文件及系统配置文件。
 
+### 🚀 访问与登录
+- **地址**: `http://localhost:8080`
+- **默认账号**: `admin`
+- **默认密码**: `admin123`
+
 ## 🛠️ 镜像底磁系统信息 (Image Info)
 
 - **基础镜像**: `Alpine Linux 3.19` (轻量化，安全性高)
