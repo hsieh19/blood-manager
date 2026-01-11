@@ -45,7 +45,7 @@
    go run main.go
    ```
 
-4. 访问：`http://localhost:8080` (默认管理员账号: admin / admin)
+4. 访问：`http://localhost:8080` (默认管理员账号: admin / admin123)
 
 ## 🐳 Docker 部署
 
