@@ -488,7 +488,7 @@
                     const date = new Date(u.created_at).toLocaleDateString('zh-CN');
                     const roleText = u.role === 'admin' ? '管理员' : '普通用户';
                     const roleBadge = u.role === 'admin' ? 'badge-info' : 'badge-success';
-                    const toggleBtnText = u.role === 'admin' ? '取消管理员' : '设为管理员';
+                    const adminBtnStyle = u.role === 'admin' ? 'background: #3b82f6; color: white; border-color: #3b82f6;' : 'opacity: 0.5;';
 
                     return `<tr>
             <td data-label="ID">${u.id}</td>
@@ -497,7 +497,7 @@
             <td data-label="创建时间">${date}</td>
             <td data-label="操作">
               <button class="btn btn-ghost btn-sm" onclick="showChangePwdModal(${u.id})">改密</button>
-              <button class="btn btn-ghost btn-sm" onclick="toggleAdminRole(${u.id})">${toggleBtnText}</button>
+              <button class="btn btn-ghost btn-sm" style="${adminBtnStyle}" onclick="toggleAdminRole(${u.id})">管理员</button>
               <button class="btn btn-ghost btn-sm" onclick="${u.role !== 'admin' ? `deleteUser(${u.id})` : ''}" ${u.role === 'admin' ? 'disabled style="opacity: 0.4; cursor: not-allowed;"' : ''}>删除</button>
             </td>
           </tr>`;
