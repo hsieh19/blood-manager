@@ -1,4 +1,8 @@
-# 二进制文件
+# ========================================
+# Blood Manager - .gitignore
+# ========================================
+
+# === 编译产物 ===
 /dist/
 /bin/
 *.exe
@@ -7,19 +11,45 @@
 *.so
 *.dylib
 
-# 数据库和日志
-# 生产环境建议通过卷挂载 /app/data，不应提交本地测试数据
+# === 数据文件 ===
+# 数据库文件（生产环境通过卷挂载）
 /data/
-/app.log
+*.db
 
-# 隐藏文件 (IDE/OS)
+# === 日志文件 ===
+*.log
+app.log
+
+# === Go 相关 ===
+# Go工作区文件
+go.work
+go.work.sum
+
+# 模块缓存（通常由 go mod 管理）
+/vendor/
+
+# === IDE / 编辑器 ===
 .idea/
 .vscode/
-.DS_Store
-Thumbs.db
 *.swp
 *.swo
+*~
 
-# 编译缓存
+# === 操作系统 ===
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# === 临时文件 ===
 /tmp/
 /temp/
+*.tmp
+*.bak
+
+# === Docker 相关 ===
+# Docker Compose 生成的文件（如有必要）
+docker-compose.override.yml

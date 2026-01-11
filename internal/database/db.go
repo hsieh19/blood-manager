@@ -412,6 +412,54 @@ func GetUserRole(id int64) string {
 	return role
 }
 
+// CountAdmins 统计管理员数量
+func CountAdmins() int {
+	if usingSQL {
+		var count int
+		sqlDB.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'admin'").Scan(&count)
+		return count
+	}
+
+	count := 0
+	boltDB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(usersBucket)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var u User
+			json.Unmarshal(v, &u)
+			if u.Role == "admin" {
+				count++
+			}
+		}
+		return nil
+	})
+	return count
+}
+
+// UpdateUserRole 更新用户角色
+func UpdateUserRole(id int64, role string) error {
+	if usingSQL {
+		_, err := sqlDB.Exec("UPDATE users SET role = ? WHERE id = ?", role, id)
+		return err
+	}
+
+	return boltDB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(usersBucket)
+		key := fmt.Sprintf("%d", id)
+		data := b.Get([]byte(key))
+		if data == nil {
+			return fmt.Errorf("user not found")
+		}
+
+		var user User
+		json.Unmarshal(data, &user)
+		user.Role = role
+
+		newData, _ := json.Marshal(user)
+		return b.Put([]byte(key), newData)
+	})
+}
+
 // ========== 血压记录操作 ==========
 
 // CreateBPRecord 创建血压记录

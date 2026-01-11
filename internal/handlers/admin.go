@@ -52,8 +52,11 @@ func DeleteUser(c *gin.Context) {
 
 	role := database.GetUserRole(id)
 	if role == "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "不能删除管理员账号"})
-		return
+		// 检查是否还有其他管理员
+		if database.CountAdmins() <= 1 {
+			c.JSON(http.StatusForbidden, gin.H{"error": "至少保留一个管理员账号"})
+			return
+		}
 	}
 
 	if err := database.DeleteUser(id); err != nil {
@@ -62,6 +65,42 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
+}
+
+// ToggleAdminRole 切换用户管理员角色
+func ToggleAdminRole(c *gin.Context) {
+	userID := c.Param("id")
+	var id int64
+	fmt.Sscanf(userID, "%d", &id)
+
+	currentRole := database.GetUserRole(id)
+	if currentRole == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	var newRole string
+	if currentRole == "admin" {
+		// 取消管理员权限前检查是否还有其他管理员
+		if database.CountAdmins() <= 1 {
+			c.JSON(http.StatusForbidden, gin.H{"error": "至少保留一个管理员账号"})
+			return
+		}
+		newRole = "user"
+	} else {
+		newRole = "admin"
+	}
+
+	if err := database.UpdateUserRole(id, newRole); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "操作失败"})
+		return
+	}
+
+	msg := "已设为管理员"
+	if newRole == "user" {
+		msg = "已取消管理员权限"
+	}
+	c.JSON(http.StatusOK, gin.H{"message": msg, "new_role": newRole})
 }
 
 // ChangeUserPassword 修改用户密码

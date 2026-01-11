@@ -61,6 +61,7 @@ func main() {
 		adminAPI.POST("/users", handlers.CreateUser)
 		adminAPI.DELETE("/users/:id", handlers.DeleteUser)
 		adminAPI.PUT("/users/:id/password", handlers.ChangeUserPassword)
+		adminAPI.PUT("/users/:id/role", handlers.ToggleAdminRole)
 		adminAPI.GET("/db-config", handlers.GetDBConfig)
 		adminAPI.POST("/db-config", handlers.SaveDBConfig)
 		adminAPI.POST("/db-config/test", handlers.TestDBConfig)
