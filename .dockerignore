@@ -1,0 +1,13 @@
+.git
+.gitignore
+dist/
+*.log
+*.db
+app.log
+blood_manager.db
+.idea/
+.vscode/
+README.md
+cloudbuild.yaml
+Dockerfile
+.dockerignore
