@@ -49,11 +49,18 @@ RUN mkdir -p /app/data
 # 给予二进制文件执行权限
 RUN chmod +x /app/blood-manager
 
+# 创建非 root 用户并授权（安全最佳实践）
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+
 # 设置生产环境环境变量
 ENV GIN_MODE=release
 
 # 暴露 Web 服务端口
 EXPOSE 8080
+
+# 切换到非 root 用户
+USER appuser
 
 # 随容器启动运行
 CMD ["./blood-manager"]
