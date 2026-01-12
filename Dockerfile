@@ -28,9 +28,9 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflag
 # =============
 FROM alpine:3.21
 
-# 安装运行时必要依赖 (ca-certificates, tzdata)
+# 安装运行时必要依赖 (ca-certificates, tzdata, su-exec)
 RUN apk update && apk upgrade --no-cache && \
-    apk add --no-cache ca-certificates tzdata \
+    apk add --no-cache ca-certificates tzdata su-exec \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo "Asia/Shanghai" > /etc/timezone
 
@@ -43,15 +43,14 @@ COPY --from=builder /build/blood-manager .
 # 复制静态资源文件夹到 /app/web/static
 COPY --from=builder /build/web/static ./web/static
 
-# 创建数据存储目录
-RUN mkdir -p /app/data
+# 复制入口脚本
+COPY entrypoint.sh ./entrypoint.sh
 
-# 给予二进制文件执行权限
-RUN chmod +x /app/blood-manager
+# 给予执行权限
+RUN chmod +x /app/blood-manager /app/entrypoint.sh
 
-# 创建非 root 用户并授权（安全最佳实践）
+# 创建非 root 用户
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-RUN chown -R appuser:appgroup /app
 
 # 设置生产环境环境变量
 ENV GIN_MODE=release
@@ -59,8 +58,5 @@ ENV GIN_MODE=release
 # 暴露 Web 服务端口
 EXPOSE 8080
 
-# 切换到非 root 用户
-USER appuser
-
-# 随容器启动运行
-CMD ["./blood-manager"]
+# 使用入口脚本启动，它会处理权限并切换用户
+ENTRYPOINT ["./entrypoint.sh"]
