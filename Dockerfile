@@ -6,7 +6,7 @@
 # =============
 # 第一阶段：编译
 # =============
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # 安装编译依赖 (CGO 需要 gcc)
 RUN apk add --no-cache gcc musl-dev
@@ -27,7 +27,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflag
 # =============
 # 第二阶段：运行
 # =============
-FROM alpine:3.19
+FROM alpine:3.21
 
 # 安装运行时必要依赖 (ca-certificates, tzdata)
 RUN apk add --no-cache ca-certificates tzdata \

@@ -1,6 +1,6 @@
 module blood-manager
 
-go 1.21
+go 1.25
 
 require (
 	github.com/gin-contrib/sessions v0.0.5
