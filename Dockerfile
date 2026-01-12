@@ -30,7 +30,8 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflag
 FROM alpine:3.21
 
 # 安装运行时必要依赖 (ca-certificates, tzdata)
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache ca-certificates tzdata \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo "Asia/Shanghai" > /etc/timezone
 
