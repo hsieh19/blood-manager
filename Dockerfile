@@ -13,12 +13,11 @@ RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /build
 
-# 先复制依赖文件，利用 Docker 缓存
-COPY go.mod go.sum ./
-RUN go mod tidy && go mod download
-
-# 复制源代码
+# 复制所有源代码
 COPY . .
+
+# 更新依赖并下载
+RUN go mod tidy && go mod download
 
 # 编译为静态二进制文件
 # CGO_ENABLED=1 是因为使用了 SQLite (go-sqlite3 等驱动通常需要 CGO)
