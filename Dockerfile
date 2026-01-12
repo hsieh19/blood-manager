@@ -15,7 +15,7 @@ WORKDIR /build
 
 # 先复制依赖文件，利用 Docker 缓存
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod tidy && go mod download
 
 # 复制源代码
 COPY . .
