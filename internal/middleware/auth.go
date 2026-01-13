@@ -2,6 +2,10 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
+	"time"
+
+	"blood-manager/internal/database"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -17,6 +21,31 @@ func AuthRequired() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// 核心：后端自动退出逻辑检查
+		idleTimeoutStr, _ := database.GetSetting("idle_timeout")
+		idleTimeout, _ := strconv.Atoi(idleTimeoutStr)
+
+		if idleTimeout > 0 {
+			lastActivity := session.Get("last_activity")
+			now := time.Now().Unix()
+
+			if lastActivity != nil {
+				lastTime := lastActivity.(int64)
+				if now-lastTime > int64(idleTimeout*60) {
+					// 超过设定的自动退出时间
+					session.Clear()
+					session.Save()
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "登录已超时，请重新登录"})
+					c.Abort()
+					return
+				}
+			}
+			// 更新最后活跃时间，并延长 Cookie 有效期
+			session.Set("last_activity", now)
+			session.Save()
+		}
+
 		c.Set("user_id", userID)
 		c.Set("username", session.Get("username"))
 		c.Set("role", session.Get("role"))

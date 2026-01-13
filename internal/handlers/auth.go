@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"blood-manager/internal/database"
 	"blood-manager/internal/models"
@@ -34,6 +35,7 @@ func Login(c *gin.Context) {
 	session.Set("user_id", user.ID)
 	session.Set("username", user.Username)
 	session.Set("role", user.Role)
+	session.Set("last_activity", time.Now().Unix())
 	session.Save()
 
 	c.JSON(http.StatusOK, gin.H{
