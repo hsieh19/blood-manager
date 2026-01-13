@@ -20,7 +20,7 @@
 
 ## 🛠️ 技术栈
 
-- **后端**: Go 1.21+, Gin Web Framework
+- **后端**: Go 1.25+, Gin Web Framework
 - **数据库**: SQLite (默认), 同时也支持云端 MySQL 配置
 - **前端**: Vanilla JS, Modern CSS (无外部重型框架，极致轻量)
 - **认证**: 基于 Session 的身份验证
@@ -98,13 +98,6 @@ docker run -d \
 
 ### 目录说明
 - `/app/data`: 存放 SQLite 数据库文件及系统配置文件。
-
-## 📦 版本发布
-
-我们提供预编译的二进制文件，支持以下架构：
-- **ARMv7l**: 适用于树莓派等嵌入式设备。
-
-请访问 [Releases](https://github.com/hsieh19/blood-manager/releases) 页面下载。
 
 ## ⚖️ 开源协议
 

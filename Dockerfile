@@ -6,19 +6,18 @@
 # =============
 # 第一阶段：编译
 # =============
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # 安装编译依赖 (CGO 需要 gcc)
 RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /build
 
-# 先复制依赖文件，利用 Docker 缓存
-COPY go.mod go.sum ./
-RUN go mod download
-
-# 复制源代码
+# 复制所有源代码
 COPY . .
+
+# 更新依赖并下载
+RUN go mod tidy && go mod download
 
 # 编译为静态二进制文件
 # CGO_ENABLED=1 是因为使用了 SQLite (go-sqlite3 等驱动通常需要 CGO)
@@ -27,10 +26,11 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -ldflags '-linkmode external -extldflag
 # =============
 # 第二阶段：运行
 # =============
-FROM alpine:3.19
+FROM alpine:3.21
 
-# 安装运行时必要依赖 (ca-certificates, tzdata)
-RUN apk add --no-cache ca-certificates tzdata \
+# 安装运行时必要依赖 (ca-certificates, tzdata, su-exec)
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache ca-certificates tzdata su-exec \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
     && echo "Asia/Shanghai" > /etc/timezone
 
@@ -43,11 +43,14 @@ COPY --from=builder /build/blood-manager .
 # 复制静态资源文件夹到 /app/web/static
 COPY --from=builder /build/web/static ./web/static
 
-# 创建数据存储目录
-RUN mkdir -p /app/data
+# 复制入口脚本
+COPY entrypoint.sh ./entrypoint.sh
 
-# 给予二进制文件执行权限
-RUN chmod +x /app/blood-manager
+# 给予执行权限
+RUN chmod +x /app/blood-manager /app/entrypoint.sh
+
+# 创建非 root 用户
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # 设置生产环境环境变量
 ENV GIN_MODE=release
@@ -55,5 +58,5 @@ ENV GIN_MODE=release
 # 暴露 Web 服务端口
 EXPOSE 8080
 
-# 随容器启动运行
-CMD ["./blood-manager"]
+# 使用入口脚本启动，它会处理权限并切换用户
+ENTRYPOINT ["./entrypoint.sh"]

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"blood-manager/internal/database"
 	"blood-manager/internal/handlers"
@@ -74,5 +75,16 @@ func main() {
 	userAPI.GET("/settings/idle-timeout", handlers.GetIdleTimeout)
 
 	log.Println("血压管理系统启动在 http://localhost:8080")
-	r.Run(":8080")
+
+	// 使用自定义 http.Server 配置超时，防止慢速连接攻击 (DoS)
+	server := &http.Server{
+		Addr:         ":8080",
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatal("服务器启动失败:", err)
+	}
 }
