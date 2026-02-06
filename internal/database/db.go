@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -554,9 +555,9 @@ func GetBPRecords(userID int64, startDate, endDate string) ([]BloodPressure, err
 	})
 
 	// 按时间倒序
-	for i, j := 0, len(records)-1; i < j; i, j = i+1, j-1 {
-		records[i], records[j] = records[j], records[i]
-	}
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].RecordTime.After(records[j].RecordTime)
+	})
 
 	return records, nil
 }
