@@ -70,8 +70,23 @@ func InitDB() error {
 
 // connectBolt 连接Bolt数据库
 func connectBolt() error {
+	dbPath := "data/health_manager.db"
+	oldDbPath := "data/blood_pressure.db"
+	legacyDbPath := "data/blood_manager.db"
+
+	// 自动迁移：如果新数据库不存在但旧数据库存在，则重命名
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		if _, err := os.Stat(legacyDbPath); err == nil {
+			log.Printf("发现旧版数据库 %s，正在重命名为 %s...", legacyDbPath, dbPath)
+			os.Rename(legacyDbPath, dbPath)
+		} else if _, err := os.Stat(oldDbPath); err == nil {
+			log.Printf("发现旧版数据库 %s，正在重命名为 %s...", oldDbPath, dbPath)
+			os.Rename(oldDbPath, dbPath)
+		}
+	}
+
 	var err error
-	boltDB, err = bolt.Open("data/blood_manager.db", 0600, nil)
+	boltDB, err = bolt.Open(dbPath, 0600, nil)
 	if err != nil {
 		return err
 	}
@@ -673,7 +688,7 @@ func RestoreDB(srcPath string) error {
 		boltDB = nil
 	}
 
-	dbPath := "data/blood_manager.db"
+	dbPath := "data/health_manager.db"
 
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
