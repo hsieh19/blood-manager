@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>历史记录 - 血压管理系统</title>
+    <title>历史记录 - 健康管理系统</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -95,11 +95,28 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            gap: 8px;
         }
 
         .record-date {
             font-size: 0.85rem;
             color: var(--text-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .record-badges {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            flex-shrink: 1;
+        }
+
+        .record-badges .badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            white-space: nowrap;
         }
 
         .record-values {
@@ -110,6 +127,7 @@
 
         .record-item {
             text-align: center;
+            min-width: 60px;
         }
 
         .record-value {
@@ -121,12 +139,74 @@
         .record-label {
             font-size: 0.75rem;
             color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .record-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            gap: 12px;
         }
 
         .record-notes {
-            margin-top: 8px;
             font-size: 0.85rem;
             color: var(--text-muted);
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .note-tag {
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        .note-tag-bp {
+            color: #e74c3c;
+        }
+
+        .note-tag-body {
+            color: #3498db;
+        }
+
+        /* 占位符 - 用于强制换行 */
+        .record-spacer {
+            flex: 1 0 100%;
+            height: 0;
+            display: none;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 640px) {
+            .record-header {
+                gap: 6px;
+            }
+
+            .record-date {
+                font-size: 0.75rem;
+            }
+
+            .record-badges .badge {
+                font-size: 0.65rem;
+                padding: 2px 6px;
+            }
+
+            .record-values {
+                gap: 16px;
+            }
+
+            .record-item {
+                min-width: 50px;
+            }
+
+            .record-value {
+                font-size: 1.3rem;
+            }
+
+            .record-spacer {
+                display: block;
+            }
         }
 
         @media (max-width: 640px) {
@@ -296,29 +376,124 @@
                         year: 'numeric', month: '2-digit', day: '2-digit',
                         hour: '2-digit', minute: '2-digit'
                     });
-                    const status = getBPStatus(r.systolic, r.diastolic);
 
-                    return `<div class="record-card">
-                        <div class="record-header">
-                            <span class="record-date">${dateStr}</span>
-                            <span class="badge ${status.class}">${status.text}</span>
-                        </div>
-                        <div class="record-values">
+                    // 血压状态
+                    const bpStatus = getBPStatus(r.systolic, r.diastolic);
+
+                    // 计算 BMI
+                    let bmi = null;
+                    let bmiStatus = null;
+                    if (r.height > 0 && r.weight > 0) {
+                        bmi = (r.weight / ((r.height / 100) ** 2)).toFixed(1);
+                        bmiStatus = getBMIStatus(parseFloat(bmi));
+                    }
+
+                    // 状态徽章
+                    let badges = '';
+                    if (r.systolic > 0 || r.diastolic > 0) {
+                        badges += `<span class="badge ${bpStatus.class}">血压: ${bpStatus.text}</span>`;
+                    }
+                    if (bmiStatus) {
+                        badges += `<span class="badge ${bmiStatus.class}" style="margin-left: 8px;">BMI: ${bmiStatus.text}</span>`;
+                    }
+
+                    // 构建所有指标
+                    let items = '';
+
+                    // 血压数据
+                    if (r.systolic > 0 || r.diastolic > 0) {
+                        items += `
                             <div class="record-item">
-                                <div class="record-value">${r.systolic}</div>
+                                <div class="record-value">${r.systolic || '-'}</div>
                                 <div class="record-label">收缩压</div>
                             </div>
                             <div class="record-item">
-                                <div class="record-value">${r.diastolic}</div>
+                                <div class="record-value">${r.diastolic || '-'}</div>
                                 <div class="record-label">舒张压</div>
                             </div>
                             <div class="record-item">
                                 <div class="record-value">${r.heart_rate || '-'}</div>
                                 <div class="record-label">心率</div>
+                            </div>`;
+
+                        // 如果有身高体重数据，添加占位符强制换行
+                        if (r.height > 0 || r.weight > 0) {
+                            items += '<div class="record-spacer"></div>';
+                        }
+                    }
+
+                    // 身高体重数据
+                    if (r.height > 0 || r.weight > 0) {
+                        items += `
+                            <div class="record-item">
+                                <div class="record-value">${r.height > 0 ? r.height : '-'}</div>
+                                <div class="record-label">身高(cm)</div>
                             </div>
+                            <div class="record-item">
+                                <div class="record-value">${r.weight > 0 ? r.weight : '-'}</div>
+                                <div class="record-label">体重(kg)</div>
+                            </div>
+                            <div class="record-item">
+                                <div class="record-value">${r.waistline > 0 ? r.waistline : '-'}</div>
+                                <div class="record-label">腰围(cm)</div>
+                            </div>`;
+
+                        // BMI
+                        if (bmi) {
+                            items += `
+                                <div class="record-item">
+                                    <div class="record-value">${bmi}</div>
+                                    <div class="record-label">BMI</div>
+                                </div>`;
+                        }
+                    }
+
+                    // 格式化备注显示
+                    let notesHtml = '';
+                    if (r.notes) {
+                        // 检查是否是合并的备注格式 "血压: xxx; 身体: xxx"
+                        if (r.notes.includes('血压:') && r.notes.includes('身体:')) {
+                            const parts = r.notes.split(';').map(p => p.trim());
+                            const bpPart = parts.find(p => p.startsWith('血压:'));
+                            const bodyPart = parts.find(p => p.startsWith('身体:'));
+
+                            notesHtml = '<div class="record-notes">';
+                            if (bpPart) {
+                                const bpText = bpPart.replace('血压:', '').trim();
+                                notesHtml += `<span class="note-tag note-tag-bp">血压:</span>${bpText}`;
+                            }
+                            if (bodyPart) {
+                                const bodyText = bodyPart.replace('身体:', '').trim();
+                                if (bpPart) notesHtml += ' &nbsp;&nbsp;&nbsp; ';
+                                notesHtml += `<span class="note-tag note-tag-body">身体:</span>${bodyText}`;
+                            }
+                            notesHtml += '</div>';
+                        } else if (r.notes.startsWith('血压:')) {
+                            // 只有血压备注
+                            const bpText = r.notes.replace('血压:', '').trim();
+                            notesHtml = `<div class="record-notes"><span class="note-tag note-tag-bp">血压:</span>${bpText}</div>`;
+                        } else if (r.notes.startsWith('身体:')) {
+                            // 只有身体备注
+                            const bodyText = r.notes.replace('身体:', '').trim();
+                            notesHtml = `<div class="record-notes"><span class="note-tag note-tag-body">身体:</span>${bodyText}</div>`;
+                        } else {
+                            // 普通备注（向后兼容）
+                            notesHtml = `<div class="record-notes">${r.notes}</div>`;
+                        }
+                    } else {
+                        notesHtml = '<div></div>';
+                    }
+
+                    return `<div class="record-card">
+                        <div class="record-header">
+                            <span class="record-date">${dateStr}</span>
+                            <div class="record-badges">${badges}</div>
                         </div>
-                        ${r.notes ? `<div class="record-notes">备注: ${r.notes}</div>` : ''}
-                        <div style="margin-top: 12px; text-align: right;">
+                        <div class="record-values">
+                            ${items}
+                        </div>
+                        <div class="record-footer">
+                            ${notesHtml}
                             <button class="btn btn-ghost btn-sm" onclick="deleteRecord(${r.id})">删除</button>
                         </div>
                     </div>`;
@@ -326,6 +501,14 @@
             } catch (err) {
                 console.error('加载失败', err);
             }
+        }
+
+        // BMI 状态判断
+        function getBMIStatus(bmi) {
+            if (bmi < 18.5) return { text: '偏瘦', class: 'badge-info' };
+            if (bmi < 24) return { text: '正常', class: 'badge-success' };
+            if (bmi < 28) return { text: '超重', class: 'badge-warning' };
+            return { text: '肥胖', class: 'badge-danger' };
         }
 
         // 删除记录

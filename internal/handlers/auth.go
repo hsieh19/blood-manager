@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"blood-manager/internal/database"
-	"blood-manager/internal/models"
+	"health-manager/internal/database"
+	"health-manager/internal/models"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -74,6 +74,8 @@ func GetCurrentUser(c *gin.Context) {
 }
 
 func getRedirectURL(role string) string {
-	// 所有用户登录后都进入用户页面
+	if role == "admin" {
+		return "/static/pages/admin.html"
+	}
 	return "/static/pages/user.html"
 }

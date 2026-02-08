@@ -1,6 +1,6 @@
-# 血压管理系统 (Blood Manager)
+# 健康管理系统 (Health Manager)
 
-一个极简、私密且高效的家庭血压记录与管理系统。专为关注健康的家庭用户设计，支持多用户管理，提供数据备份与还原功能。
+一、极简、私密且高效的家庭健康记录与管理系统。专为关注健康的家庭用户设计，支持多用户管理，提供数据备份与还原功能。
 
 ## ✨ 主要功能
 
@@ -16,11 +16,11 @@
 
 ```bash
 docker run -d \
-  --name blood-manager \
+  --name health-manager \
   -p 8080:8080 \
   -v ./data:/app/data \
   --restart always \
-  hsieh19/blood-manager:latest
+  hsieh19/health-manager:latest
 ```
 
 ### 挂载目录说明

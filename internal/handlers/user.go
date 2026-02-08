@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"blood-manager/internal/database"
-	"blood-manager/internal/models"
+	"health-manager/internal/database"
+	"health-manager/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,18 +22,27 @@ func init() {
 	}
 }
 
-// CreateBP 创建血压记录
+// CreateBP 创建健康记录
 func CreateBP(c *gin.Context) {
 	var req models.CreateBPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请填写完整的血压数据"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "数据格式错误"})
+		return
+	}
+
+	// 至少需要填写血压或身高体重之一
+	hasBP := req.Systolic > 0 || req.Diastolic > 0
+	hasBody := req.Height > 0 || req.Weight > 0
+
+	if !hasBP && !hasBody {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请至少填写血压或身高体重数据"})
 		return
 	}
 
 	userID := c.GetInt64("user_id")
 	recordTime := time.Now().In(beijingLoc)
 
-	id, err := database.CreateBPRecord(userID, req.Systolic, req.Diastolic, req.HeartRate, recordTime, req.Notes)
+	id, err := database.CreateBPRecord(userID, req.Systolic, req.Diastolic, req.HeartRate, req.Height, req.Weight, req.Waistline, recordTime, req.Notes)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存失败"})
 		return
@@ -42,7 +51,7 @@ func CreateBP(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "记录成功",
 		"id":      id,
-		"time":    recordTime.Format("2006-01-02 15:04:05"),
+		"time":    recordTime.Format("2006-01-02 15:04"),
 	})
 }
 

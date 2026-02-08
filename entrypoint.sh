@@ -15,4 +15,4 @@ chown -R appuser:appgroup /app/data /app/app.log
 # 切换到非 root 用户并启动程序
 # su-exec 类似于 sudo，但更轻量，专门用于 Docker
 echo "Starting application as appuser..."
-exec su-exec appuser:appgroup ./blood-manager
+exec su-exec appuser:appgroup ./health-manager

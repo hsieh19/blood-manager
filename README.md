@@ -1,10 +1,10 @@
-# 血压管理系统 (Blood Manager)
+# 健康管理系统 (Health Manager)
 
-[![GitHub release](https://img.shields.io/github/v/release/hsieh19/blood-manager)](https://github.com/hsieh19/blood-manager/releases)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/hsieh19/blood-manager)
+[![GitHub release](https://img.shields.io/github/v/release/hsieh19/health-manager)](https://github.com/hsieh19/health-manager/releases)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/hsieh19/health-manager)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-一个极简、私密且高效的家庭血压记录与管理系统。专为关注健康的家庭用户设计，支持多用户管理，提供数据备份与还原功能。
+一、极简、私密且高效的家庭健康记录与管理系统。专为关注健康的家庭用户设计，支持多用户管理，提供数据备份与还原功能。
 
 ## ✨ 主要功能
 
@@ -28,9 +28,9 @@
 ## 📁 项目结构
 
 ```
-blood-manager/
+health-manager/
 ├── cmd/
-│   └── blood-manager/
+│   └── health-manager/
 │       └── main.go           # 应用入口
 ├── internal/                  # 内部包（不对外暴露）
 │   ├── config/
@@ -61,14 +61,14 @@ blood-manager/
 └── README.md                  # 项目说明
 ```
 
-## �🚀 快速开始
+## 🚀 快速开始
 
 ### 本地编译运行
 
 1. 克隆仓库：
    ```bash
-   git clone https://github.com/hsieh19/blood-manager.git
-   cd blood-manager
+   git clone https://github.com/hsieh19/health-manager.git
+   cd health-manager
    ```
 
 2. 安装依赖：
@@ -89,11 +89,11 @@ blood-manager/
 
 ```bash
 docker run -d \
-  --name blood-manager \
+  --name health-manager \
   -p 8080:8080 \
   -v ./data:/app/data \
   --restart always \
-  hsieh19/blood-manager:latest
+  hsieh19/health-manager:latest
 ```
 
 ### 目录说明

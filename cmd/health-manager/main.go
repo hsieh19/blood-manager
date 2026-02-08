@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"blood-manager/internal/database"
-	"blood-manager/internal/handlers"
-	"blood-manager/internal/middleware"
+	"health-manager/internal/database"
+	"health-manager/internal/handlers"
+	"health-manager/internal/middleware"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -29,7 +29,7 @@ func main() {
 	r := gin.Default()
 
 	// 配置Session
-	store := cookie.NewStore([]byte("blood-manager-secret-key-2024"))
+	store := cookie.NewStore([]byte("health-manager-secret-key-2024"))
 	r.Use(sessions.Sessions("session", store))
 
 	// 静态文件服务
@@ -74,7 +74,7 @@ func main() {
 	// 通用设置API (需要登录)
 	userAPI.GET("/settings/idle-timeout", handlers.GetIdleTimeout)
 
-	log.Println("血压管理系统启动在 http://localhost:8080")
+	log.Println("健康管理系统启动在 http://localhost:8080")
 
 	// 使用自定义 http.Server 配置超时，防止慢速连接攻击 (DoS)
 	server := &http.Server{

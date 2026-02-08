@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"blood-manager/internal/config"
+	"health-manager/internal/config"
 
 	_ "github.com/go-sql-driver/mysql"
 	bolt "go.etcd.io/bbolt"
@@ -33,13 +33,16 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// BloodPressure 血压记录结构
+// BloodPressure 健康记录结构（包含血压和身高体重）
 type BloodPressure struct {
 	ID         int64     `json:"id"`
 	UserID     int64     `json:"user_id"`
 	Systolic   int       `json:"systolic"`
 	Diastolic  int       `json:"diastolic"`
 	HeartRate  int       `json:"heart_rate"`
+	Height     float64   `json:"height"`
+	Weight     float64   `json:"weight"`
+	Waistline  float64   `json:"waistline"`
 	RecordTime time.Time `json:"record_time"`
 	Notes      string    `json:"notes"`
 	CreatedAt  time.Time `json:"created_at"`
@@ -95,13 +98,13 @@ func connectBolt() error {
 }
 
 func createDefaultAdmin() error {
+	// 只在数据库中没有任何用户时创建默认管理员
 	users, _ := GetAllUsers()
-	for _, u := range users {
-		if u.Role == "admin" {
-			return nil
-		}
+	if len(users) > 0 {
+		return nil // 已有用户，不创建默认账户
 	}
 
+	// 创建默认管理员账户 admin/admin123
 	hashedPwd, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 	return CreateUser("admin", string(hashedPwd), "admin")
 }
@@ -140,9 +143,12 @@ func createMySQLTables() error {
 	bpTable := `CREATE TABLE IF NOT EXISTS blood_pressure (
 		id BIGINT PRIMARY KEY AUTO_INCREMENT,
 		user_id BIGINT NOT NULL,
-		systolic INT NOT NULL,
-		diastolic INT NOT NULL,
+		systolic INT,
+		diastolic INT,
 		heart_rate INT,
+		height DECIMAL(5,2),
+		weight DECIMAL(5,2),
+		waistline DECIMAL(5,2),
 		record_time DATETIME NOT NULL,
 		notes TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -152,14 +158,14 @@ func createMySQLTables() error {
 	}
 
 	// 创建默认管理员
-	var count int
-	sqlDB.QueryRow("SELECT COUNT(*) FROM users WHERE role = 'admin'").Scan(&count)
-	if count == 0 {
+	// 只在数据库中没有任何用户时创建默认 admin 账户
+	var userCount int
+	sqlDB.QueryRow("SELECT COUNT(*) FROM users").Scan(&userCount)
+	if userCount == 0 {
 		hashedPwd, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		sqlDB.Exec("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
 			"admin", string(hashedPwd), "admin")
 	}
-
 	settingsTable := `CREATE TABLE IF NOT EXISTS settings (
 		description VARCHAR(100),
 		setting_key VARCHAR(50) PRIMARY KEY,
@@ -461,13 +467,13 @@ func UpdateUserRole(id int64, role string) error {
 	})
 }
 
-// ========== 血压记录操作 ==========
+// ========== 健康记录操作 ==========
 
-// CreateBPRecord 创建血压记录
-func CreateBPRecord(userID int64, systolic, diastolic, heartRate int, recordTime time.Time, notes string) (int64, error) {
+// CreateBPRecord 创建健康记录
+func CreateBPRecord(userID int64, systolic, diastolic, heartRate int, height, weight, waistline float64, recordTime time.Time, notes string) (int64, error) {
 	if usingSQL {
-		result, err := sqlDB.Exec(`INSERT INTO blood_pressure (user_id, systolic, diastolic, heart_rate, record_time, notes) 
-			VALUES (?, ?, ?, ?, ?, ?)`, userID, systolic, diastolic, heartRate, recordTime, notes)
+		result, err := sqlDB.Exec(`INSERT INTO blood_pressure (user_id, systolic, diastolic, heart_rate, height, weight, waistline, record_time, notes) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, userID, systolic, diastolic, heartRate, height, weight, waistline, recordTime, notes)
 		if err != nil {
 			return 0, err
 		}
@@ -485,6 +491,9 @@ func CreateBPRecord(userID int64, systolic, diastolic, heartRate int, recordTime
 			Systolic:   systolic,
 			Diastolic:  diastolic,
 			HeartRate:  heartRate,
+			Height:     height,
+			Weight:     weight,
+			Waistline:  waistline,
 			RecordTime: recordTime,
 			Notes:      notes,
 			CreatedAt:  time.Now(),
@@ -498,10 +507,10 @@ func CreateBPRecord(userID int64, systolic, diastolic, heartRate int, recordTime
 	return id, err
 }
 
-// GetBPRecords 获取血压记录
+// GetBPRecords 获取健康记录
 func GetBPRecords(userID int64, startDate, endDate string) ([]BloodPressure, error) {
 	if usingSQL {
-		query := "SELECT id, systolic, diastolic, heart_rate, record_time, notes FROM blood_pressure WHERE user_id = ?"
+		query := "SELECT id, systolic, diastolic, heart_rate, height, weight, waistline, record_time, notes FROM blood_pressure WHERE user_id = ?"
 		args := []interface{}{userID}
 
 		if startDate != "" {
@@ -523,7 +532,7 @@ func GetBPRecords(userID int64, startDate, endDate string) ([]BloodPressure, err
 		var records []BloodPressure
 		for rows.Next() {
 			var bp BloodPressure
-			rows.Scan(&bp.ID, &bp.Systolic, &bp.Diastolic, &bp.HeartRate, &bp.RecordTime, &bp.Notes)
+			rows.Scan(&bp.ID, &bp.Systolic, &bp.Diastolic, &bp.HeartRate, &bp.Height, &bp.Weight, &bp.Waistline, &bp.RecordTime, &bp.Notes)
 			bp.UserID = userID
 			records = append(records, bp)
 		}

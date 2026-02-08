@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>血压记录 - 血压管理系统</title>
+    <title>血压记录 - 健康管理系统</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -135,7 +135,7 @@
 <body>
     <div class="container fade-in">
         <header class="header">
-            <div class="logo">血压管理</div>
+            <div class="logo">健康管理</div>
             <div class="nav-actions">
                 <span class="user-info">欢迎，<span id="username"></span></span>
                 <!-- 主题下拉菜单 -->
@@ -159,29 +159,59 @@
 
         <div id="message"></div>
 
-        <!-- 快速记录 -->
+        <!-- 健康记录 -->
         <div class="card">
-            <h2 style="margin-bottom: 20px;">记录血压</h2>
-            <form id="recordForm">
-                <div class="record-section"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 16px; margin-bottom: 24px;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="systolic">收缩压 (mmHg)</label>
-                        <input type="number" id="systolic" min="60" max="260" placeholder="120" required>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="diastolic">舒张压 (mmHg)</label>
-                        <input type="number" id="diastolic" min="40" max="160" placeholder="80" required>
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="heartRate">心率 (次/分)</label>
-                        <input type="number" id="heartRate" min="40" max="200" placeholder="70">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="notes">备注</label>
-                        <input type="text" id="notes" placeholder="可选">
+            <h2 style="margin-bottom: 20px;">健康记录</h2>
+            <form id="healthForm">
+                <!-- 血压记录分组 -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-secondary);">记录血压</h3>
+                    <div class="record-section"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 16px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="systolic">收缩压 (mmHg)</label>
+                            <input type="number" id="systolic" min="60" max="260" placeholder="120">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="diastolic">舒张压 (mmHg)</label>
+                            <input type="number" id="diastolic" min="40" max="160" placeholder="80">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="heartRate">心率 (次/分)</label>
+                            <input type="number" id="heartRate" min="40" max="200" placeholder="70">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="bpNotes">备注</label>
+                            <input type="text" id="bpNotes" placeholder="可选">
+                        </div>
                     </div>
                 </div>
+
+                <!-- 身高体重记录分组 -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 12px; font-size: 16px; color: var(--text-secondary);">记录身高体重</h3>
+                    <div class="record-section"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 16px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="height">身高 (cm)</label>
+                            <input type="number" id="height" min="50" max="250" step="0.1" placeholder="170">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="weight">体重 (kg)</label>
+                            <input type="number" id="weight" min="20" max="300" step="0.1" placeholder="65">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="waistline">腰围 (cm)</label>
+                            <input type="number" id="waistline" min="30" max="200" step="0.1" placeholder="80">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="bodyNotes">备注</label>
+                            <input type="text" id="bodyNotes" placeholder="可选">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 统一的按钮组 -->
                 <div class="btn-group">
                     <button type="submit" class="btn btn-primary">保存记录</button>
                     <button type="button" class="btn btn-ghost"
@@ -263,26 +293,49 @@
             setTimeout(() => msg.innerHTML = '', 3000);
         }
 
-        // 保存记录
-        document.getElementById('recordForm').addEventListener('submit', async (e) => {
+        // 保存健康记录
+        document.getElementById('healthForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // 获取所有数据
+            const systolic = parseInt(document.getElementById('systolic').value) || 0;
+            const diastolic = parseInt(document.getElementById('diastolic').value) || 0;
+            const heartRate = parseInt(document.getElementById('heartRate').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            const weight = parseFloat(document.getElementById('weight').value) || 0;
+            const waistline = parseFloat(document.getElementById('waistline').value) || 0;
+            const bpNotes = document.getElementById('bpNotes').value.trim();
+            const bodyNotes = document.getElementById('bodyNotes').value.trim();
+
+            // 合并备注
+            let notes = '';
+            if (bpNotes && bodyNotes) {
+                notes = `血压: ${bpNotes}; 身体: ${bodyNotes}`;
+            } else if (bpNotes) {
+                notes = `血压: ${bpNotes}`;
+            } else if (bodyNotes) {
+                notes = `身体: ${bodyNotes}`;
+            }
 
             try {
                 const res = await fetch('/api/bp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        systolic: parseInt(document.getElementById('systolic').value),
-                        diastolic: parseInt(document.getElementById('diastolic').value),
-                        heart_rate: parseInt(document.getElementById('heartRate').value) || 0,
-                        notes: document.getElementById('notes').value
+                        systolic,
+                        diastolic,
+                        heart_rate: heartRate,
+                        height,
+                        weight,
+                        waistline,
+                        notes
                     })
                 });
 
                 const data = await res.json();
                 if (res.ok) {
                     showMessage(`记录成功 - ${data.time}`);
-                    document.getElementById('recordForm').reset();
+                    document.getElementById('healthForm').reset();
                 } else {
                     showMessage(data.error, 'error');
                 }

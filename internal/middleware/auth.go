@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"blood-manager/internal/database"
+	"health-manager/internal/database"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

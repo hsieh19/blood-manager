@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台 - 血压管理系统</title>
+    <title>管理后台 - 健康管理系统</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -286,7 +286,7 @@
 
                         <div class="form-group">
                             <label for="dbName">数据库名</label>
-                            <input type="text" id="dbName" placeholder="blood_manager">
+                            <input type="text" id="dbName" placeholder="health_manager">
                         </div>
                     </div>
 
@@ -315,7 +315,7 @@
                 <div class="grid-2" style="margin-top: 16px; align-items: end;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label for="restorePath">还原文件路径</label>
-                        <input type="text" id="restorePath" placeholder="如: D:\backup\blood_backup_20260111_104646.db">
+                        <input type="text" id="restorePath" placeholder="如: D:\backup\health_backup_20260111_104646.db">
                     </div>
                     <div>
                         <button type="button" class="btn btn-danger" onclick="restoreDatabase()">还原数据</button>
@@ -687,7 +687,7 @@
                 pad(now.getHours()) +
                 pad(now.getMinutes()) +
                 pad(now.getSeconds());
-            return 'blood_backup_' + timestamp + '.db';
+            return 'health_backup_' + timestamp + '.db';
         }
 
         async function backupDatabase() {
