@@ -4,26 +4,31 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/hsieh19/health-manager)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-一、极简、私密且高效的家庭健康记录与管理系统。专为关注健康的家庭用户设计，支持多用户管理，提供数据备份与还原功能。
+一个极简、私密且高效的家庭健康记录与管理系统。专为关注健康的家庭用户设计，支持多用户管理，提供数据备份与还原功能。
 
 ## ✨ 主要功能
 
-- **🚀 极简记录**：快速录入收缩压、舒张压和心率，支持备注。
-- **📊 历史查询**：支持按日期筛选查询历史记录，数据一目了然。
+- **� 全面监控**：
+  - **血压管理**：快速录入收缩压、舒张压和心率，自动判定血压状态（正常/偏高/高血压）。
+  - **身体指标**：支持记录身高、体重、腰围，自动计算 BMI 并判定体重状态（正常/超重/肥胖）。
+- **� 极简录入**：支持血压与身体数据合并或单独录入，智能处理多备注信息。
+- **📱 响应式设计**：
+  - **桌面端**：指标一目了然。
+  - **移动端**：专项优化，日期、状态、核心数据分行清晰，单手操作友好。
 - **👥 用户管理**：支持管理员创建和管理多个用户账号。
 - **💾 数据安全**：
-  - 支持本地导出备份（自动生成时间戳文件名）。
-  - 支持手动指定路径一键还原数据库。
-- **🌓 主题切换**：支持浅色与深色模式，保护视力。
-- **🛡️ 安全保障**：支持设置全局自动退出时间（Idle Timeout）。
-- **📱 响应式设计**：完美适配手机、平板及桌面端访问。
+  - 支持数据导出备份（自动生成时间戳文件名）。
+  - 支持一键还原，同时支持多数据库（SQLite/MySQL）配置。
+  - **自动迁移**：支持 MySQL 数据库自动结构更新，Docker 用户升级无忧。
+- **🌓 主题切换**：支持浅色与深色模式。
+- **🛡️ 安全保障**：支持设置全局闲置自动退出时间（Idle Timeout）。
 
 ## 🛠️ 技术栈
 
 - **后端**: Go 1.25+, Gin Web Framework
-- **数据库**: SQLite (默认), 同时也支持云端 MySQL 配置
-- **前端**: Vanilla JS, Modern CSS (无外部重型框架，极致轻量)
-- **认证**: 基于 Session 的身份验证
+- **数据库**: SQLite (默认), 同时也支持远程 MySQL 配置
+- **前端**: Vanilla JS, UI 精美 CSS (原生开发，极速加载)
+- **容器化**: Docker & Docker Compose
 
 ## 📁 项目结构
 
@@ -32,33 +37,19 @@ health-manager/
 ├── cmd/
 │   └── health-manager/
 │       └── main.go           # 应用入口
-├── internal/                  # 内部包（不对外暴露）
-│   ├── config/
-│   │   └── config.go         # 配置管理
-│   ├── database/
-│   │   └── db.go             # 数据库连接与操作
-│   ├── handlers/
-│   │   ├── admin.go          # 管理员 API 处理
-│   │   ├── auth.go           # 认证处理（登录/登出）
-│   │   └── user.go           # 用户血压记录 API
-│   ├── middleware/
-│   │   └── auth.go           # 认证中间件
-│   └── models/
-│       └── models.go         # 数据模型定义
+├── internal/
+│   ├── config/               # 配置加载逻辑
+│   ├── database/             # 数据库操作与自动迁移
+│   ├── handlers/             # 业务接口处理 (API Handlers)
+│   ├── middleware/           # 认证与安全中间件
+│   └── models/               # 数据模型定义
 ├── web/
-│   └── static/               # 静态资源
-│       ├── css/
-│       │   └── style.css     # 全局样式
-│       └── pages/
-│           ├── admin.html    # 管理后台页面
-│           ├── login.html    # 登录页面
-│           ├── records.html  # 历史记录页面
-│           └── user.html     # 用户主页
-├── .github/                   # GitHub Actions 配置
-├── Dockerfile                 # Docker 构建文件
-├── go.mod                     # Go 模块定义
-├── go.sum                     # Go 依赖校验
-└── README.md                  # 项目说明
+│   └── static/
+│       └── pages/            # 精美 HTML 页面集合
+├── Dockerfile                # 多阶段构建 Dockerfile
+├── docker-compose.yml        # 容器编排示例
+├── go.mod                    # 依赖定义
+└── README.md                 # 项目文档
 ```
 
 ## 🚀 快速开始
@@ -71,21 +62,17 @@ health-manager/
    cd health-manager
    ```
 
-2. 安装依赖：
+2. 安装依赖并运行：
    ```bash
    go mod tidy
+   go run cmd/health-manager/main.go
    ```
 
-3. 运行：
-   ```bash
-   go run main.go
-   ```
-
-4. 访问：`http://localhost:8080` (默认管理员账号: admin / admin123)
+3. 访问：`http://localhost:8080` (默认账号: `admin` / `admin123`)
 
 ## 🐳 Docker 部署
 
-你可以直接使用 Docker 快速部署本项目：
+你可以直接使用 Docker 快速部署本项目（支持数据持久化与自动升级）：
 
 ```bash
 docker run -d \
@@ -96,8 +83,10 @@ docker run -d \
   hsieh19/health-manager:latest
 ```
 
-### 目录说明
-- `/app/data`: 存放 SQLite 数据库文件及系统配置文件。
+### 💡 升级说明 (针对 Docker 用户)
+如果你是从旧版本（仅支持血压）升级到当前版本，程序在启动时会：
+- **SQLite**: 自动兼容旧格式。
+- **MySQL**: 自动执行数据库迁移，增加缺失的身高、体重、腰围字段。
 
 ## ⚖️ 开源协议
 
