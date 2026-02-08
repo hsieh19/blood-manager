@@ -8,8 +8,8 @@ on:
 
 env:
   REGISTRY: docker.io
-  # 镜像名称设为 用户名/项目名，例如 hsieh19/blood-manager
-  IMAGE_NAME: ${{ github.repository }}
+  # Docker Hub 镜像名称
+  IMAGE_NAME: hsieh19/health-manager
 
 jobs:
   build-and-push:
@@ -54,5 +54,5 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.IMAGE_NAME }}
-          short-description: "极简家庭血压管理系统，支持多用户、备份还原及 Docker 一键部署。"
+          short-description: "极简家庭健康管理系统，支持血压、身高、体重、BMI 记录，支持多用户及 Docker 一键部署。"
           readme-filepath: ./DOCKERHUB.md
