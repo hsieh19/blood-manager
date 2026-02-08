@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
 	"sync"
@@ -155,6 +156,33 @@ func createMySQLTables() error {
 	)`
 	if _, err := sqlDB.Exec(bpTable); err != nil {
 		return err
+	}
+
+	// 自动迁移：为 MySQL 旧表添加缺失字段
+	if usingSQL {
+		columnsToEnsure := []struct {
+			name string
+			spec string
+		}{
+			{"height", "DECIMAL(5,2) DEFAULT 0"},
+			{"weight", "DECIMAL(5,2) DEFAULT 0"},
+			{"waistline", "DECIMAL(5,2) DEFAULT 0"},
+		}
+
+		for _, col := range columnsToEnsure {
+			// 检查列是否存在
+			var count int
+			err := sqlDB.QueryRow(`SELECT COUNT(*) FROM information_schema.columns 
+				WHERE table_schema = DATABASE() AND table_name = 'blood_pressure' AND column_name = ?`, col.name).Scan(&count)
+			if err == nil && count == 0 {
+				// 列不存在，添加它
+				log.Printf("正在迁移数据库：为 blood_pressure 表添加 %s 字段", col.name)
+				_, execErr := sqlDB.Exec(fmt.Sprintf("ALTER TABLE blood_pressure ADD COLUMN %s %s", col.name, col.spec))
+				if execErr != nil {
+					log.Printf("迁移字段 %s 失败: %v", col.name, execErr)
+				}
+			}
+		}
 	}
 
 	// 创建默认管理员
